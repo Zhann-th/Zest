@@ -28,8 +28,6 @@ from trainer import Trainer
 from llm_client import LLMClient
 from pptx_io import PptxIO
 
-
-# Пути для ввода/вывода
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "..", "outputs")
 UPLOAD_DIR = os.path.join(BASE_DIR, "..", "uploads")
@@ -42,7 +40,7 @@ class Pipeline:
     Использование:
         pipe = Pipeline()
         result = pipe.process_prompt("Создай 5 слайдов про AI")
-        # result["output_filepath"] → путь к PPTX
+
     """
 
     def __init__(self):
@@ -74,15 +72,13 @@ class Pipeline:
                 - nlu_result: dict
                 - source: str
         """
-        # Шаг 1: NLU — понимание промпта
+
         nlu_result = self.nlu.parse_intent(prompt)
         intent = nlu_result["intent"]
         entities = nlu_result["entities"]
 
-        # Шаг 2: Проверяем обученные шаблоны
         matched_template = self.trainer.match_template(prompt)
 
-        # Шаг 3: Маршрутизация по интенту
         if intent == INTENT_CREATE:
             return self._handle_create(prompt, entities, matched_template, template)
 
@@ -99,7 +95,7 @@ class Pipeline:
             return self._handle_search(entities, prompt, template)
 
         elif intent == INTENT_UNKNOWN:
-            # Фоллбэк: пытаемся создать презентацию
+
             if entities.get("topic"):
                 return self._handle_create(prompt, entities, matched_template, template)
             return {
@@ -124,9 +120,8 @@ class Pipeline:
             "source": "error",
         }
 
-    # ─────────────────────────────────────────────────────────
-    # Обработчики интентов
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _handle_create(self, prompt, entities, matched_template, template="random"):
         """Создание новой презентации."""
@@ -135,11 +130,9 @@ class Pipeline:
         theme = entities.get("theme", "modern_dark")
         needs_search = entities.get("needs_web_search", False)
 
-        # Решение по источнику контента
         slides_content = []
         source = "custom_ai_generation"
 
-        # Приоритет 1: Обученный шаблон
         if matched_template:
             slides_content = matched_template["structure"]
             theme = matched_template.get("theme", theme)
@@ -147,21 +140,18 @@ class Pipeline:
             title = f"{matched_template['keyword'].title()} Deck"
             subtitle = f"Generated using trained AI template ({theme} theme)"
 
-        # Приоритет 2: Веб-поиск
         elif needs_search:
             slides_content = self.web.format_facts(topic, max_slides=slide_count)
             source = "live_web_search"
             title = f"Presentation: {topic.title()}"
             subtitle = "Generated with Live Web Intelligence"
 
-        # Приоритет 3: Генерация по теме
         else:
             slides_content = self._generate_topic_slides(topic, slide_count)
             source = "custom_ai_generation"
             title = topic.title()
             subtitle = "AI Generated Presentation Deck"
 
-        # Создаём PPTX
         output_filename = f"deck_{uuid.uuid4().hex[:8]}.pptx"
         output_filepath = os.path.join(OUTPUT_DIR, output_filename)
 
@@ -173,7 +163,6 @@ class Pipeline:
             output_filepath=output_filepath,
         )
 
-        # Инспектируем результат для UI
         inspection = self.pptx.read_pptx(output_filepath)
 
         return {
@@ -351,7 +340,7 @@ class Pipeline:
         """Поиск информации и создание презентации на основе найденного."""
         topic = entities.get("topic", "")
         if not topic:
-            # Извлекаем тему из промпта
+
             topic = re.sub(
                 r"(?:search|find|google|research|найди|поиск|загугл)\w*",
                 "", prompt, flags=re.IGNORECASE
@@ -361,10 +350,8 @@ class Pipeline:
         slide_count = entities.get("slide_count", 0) or 4
         theme = entities.get("theme", "modern_dark")
 
-        # Поиск в интернете
         slides_content = self.web.format_facts(topic, max_slides=slide_count)
 
-        # Создаём PPTX
         output_filename = f"research_{uuid.uuid4().hex[:8]}.pptx"
         output_filepath = os.path.join(OUTPUT_DIR, output_filename)
 
@@ -395,19 +382,16 @@ class Pipeline:
             },
         }
 
-    # ─────────────────────────────────────────────────────────
-    # Генерация слайдов по теме (без веб-поиска)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _generate_topic_slides(self, topic, count=4):
         """Генерирует структуры слайдов по теме, обращаясь к ИИ с данными из веб-поиска."""
         logging.info(f"Сбор фактов в интернете по теме: {topic}")
-        
-        # 1. Собираем реальные факты из интернета
+
         search_results = self.web.search_topic(topic, max_results=5)
         context_text = "\n".join([f"- {r['title']}: {r['snippet']}" for r in search_results])
-        
-        # 2. Передаем факты в ИИ для структурирования
+
         logging.info(f"Запрос к локальному ИИ (Ollama) для генерации {count} слайдов на тему: {topic}")
         slides = self.llm.generate_slides(topic, count, context=context_text)
         

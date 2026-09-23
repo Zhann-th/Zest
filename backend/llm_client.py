@@ -75,11 +75,10 @@ class LLMClient:
 
     def _parse_json(self, text: str, count: int, topic: str) -> list:
         """Очищает ответ от маркдауна (```json ... ```) и парсит JSON."""
-        # Удаляем markdown-блоки, если модель их добавила
+
         clean_text = re.sub(r"^```(?:json)?", "", text, flags=re.MULTILINE)
         clean_text = re.sub(r"```$", "", clean_text, flags=re.MULTILINE).strip()
-        
-        # Находим первую [ и последнюю ]
+
         start_idx = clean_text.find('[')
         end_idx = clean_text.rfind(']')
         
@@ -90,8 +89,7 @@ class LLMClient:
             slides = json.loads(clean_text)
             if not isinstance(slides, list):
                 slides = [slides]
-            
-            # Подстраховка: если модель сгенерировала мало, дополним
+
             while len(slides) < count:
                 slides.append({
                     "title": f"Дополнительный слайд {len(slides)+1}",
@@ -115,7 +113,6 @@ class LLMClient:
             slides.append({"title": f"Пустой слайд {len(slides)+1}", "bullets": ["-"]})
         return slides[:count]
 
-# Для локального тестирования модуля
 if __name__ == "__main__":
     client = LLMClient()
     print(client.generate_slides("Space Exploration", 2))

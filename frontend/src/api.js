@@ -26,7 +26,7 @@ export const api = {
   },
   
   sendChat: async (message, template = "random") => {
-    // Используем process-prompt вместо chat
+    
     return axios.post(`${API_BASE}/process-prompt`, { prompt: message, template });
   },
 

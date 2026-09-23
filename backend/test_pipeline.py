@@ -14,7 +14,6 @@ import sys
 import json
 import time
 
-# Добавляем путь к backend
 sys.path.insert(0, os.path.dirname(__file__))
 
 from pptx_io import PptxIO
@@ -47,7 +46,6 @@ def test_pptx_io():
     print("\n═══ 1. pptx_io ═══")
     io = PptxIO()
 
-    # Создание
     path = os.path.join(OUTPUT_DIR, "test_create.pptx")
     result = io.create_presentation(
         title="Test Presentation",
@@ -63,25 +61,21 @@ def test_pptx_io():
     test("create_presentation returns path", result == path)
     test("create_presentation file exists", os.path.exists(path))
 
-    # Чтение
     data = io.read_pptx(path)
     test("read_pptx slide_count == 4 (title + 3)", data["slide_count"] == 4)
     test("read_pptx has slides data", len(data["slides"]) == 4)
     test("read_pptx title slide detected", "Test Presentation" in data["slides"][0]["title"])
 
-    # Добавление слайда
     add_path = os.path.join(OUTPUT_DIR, "test_add.pptx")
     io.add_slide(path, {"title": "Added Slide", "bullets": ["New bullet"]}, add_path)
     add_data = io.read_pptx(add_path)
     test("add_slide increases count", add_data["slide_count"] == 5)
 
-    # Удаление слайда
     del_path = os.path.join(OUTPUT_DIR, "test_delete.pptx")
     io.delete_slide(add_path, 5, del_path)
     del_data = io.read_pptx(del_path)
     test("delete_slide decreases count", del_data["slide_count"] == 4)
 
-    # Модификация
     mod_path = os.path.join(OUTPUT_DIR, "test_modify.pptx")
     io.modify_slide(path, 1, {"new_title": "Modified Title"}, mod_path)
     mod_data = io.read_pptx(mod_path)
@@ -93,37 +87,30 @@ def test_nlu_engine():
     print("\n═══ 2. nlu_engine ═══")
     nlu = NLUEngine()
 
-    # Создание (англ.)
     r = nlu.parse_intent("Create a 5-slide presentation about Artificial Intelligence")
     test("EN create intent", r["intent"] == INTENT_CREATE)
     test("EN slide_count == 5", r["entities"]["slide_count"] == 5)
     test("EN topic extracted", len(r["entities"]["topic"]) > 0)
 
-    # Создание (рус.)
     r = nlu.parse_intent("Создай презентацию на 3 слайда про космос")
     test("RU create intent", r["intent"] == INTENT_CREATE)
     test("RU slide_count == 3", r["entities"]["slide_count"] == 3)
 
-    # Редактирование (рус.)
     r = nlu.parse_intent("Замени заголовок 2-го слайда на «Новый заголовок»")
     test("RU edit intent", r["intent"] == INTENT_EDIT)
     test("RU slide_index == 2", r["entities"]["slide_index"] == 2)
     test("RU new_title extracted", "Новый заголовок" in r["entities"]["new_title"])
 
-    # Удаление (англ.)
     r = nlu.parse_intent("Delete slide 3")
     test("EN delete intent", r["intent"] == INTENT_DELETE)
     test("EN slide_index == 3", r["entities"]["slide_index"] == 3)
 
-    # Добавление (рус.)
     r = nlu.parse_intent("Добавь слайд про машинное обучение")
     test("RU add intent", r["intent"] == INTENT_ADD)
 
-    # Веб-поиск
     r = nlu.parse_intent("Search the web for AI trends and create a deck")
     test("EN search triggers web", r["entities"]["needs_web_search"])
 
-    # Тема оформления
     r = nlu.parse_intent("Create deck with corporate theme")
     test("Theme detection corporate", r["entities"]["theme"] == "corporate_navy")
 
@@ -136,13 +123,11 @@ def test_web_search():
     print("\n═══ 3. web_search ═══")
     ws = WebSearch()
 
-    # Поиск
     results = ws.search_topic("Artificial Intelligence", max_results=3)
     test("search_topic returns results", len(results) >= 1)
     test("search_topic has title", "title" in results[0])
     test("search_topic has snippet", "snippet" in results[0])
 
-    # Форматирование в слайды
     slides = ws.format_facts("Electric Vehicles", max_slides=3)
     test("format_facts returns slides", len(slides) >= 1)
     test("format_facts has title", "title" in slides[0])
@@ -154,7 +139,6 @@ def test_trainer():
     print("\n═══ 4. trainer ═══")
     t = Trainer()
 
-    # Правила
     added = t.add_rule("Test rule: always use 3 bullets per slide.")
     test("add_rule returns True", added)
 
@@ -164,7 +148,6 @@ def test_trainer():
     rules = t.get_rules()
     test("get_rules contains new rule", "Test rule: always use 3 bullets per slide." in rules)
 
-    # Шаблоны
     t.add_template("test_keyword", "clean_light", [
         {"title": "Test Slide", "bullets": ["A", "B"]},
     ])
@@ -172,12 +155,10 @@ def test_trainer():
     test("match_template finds template", matched is not None)
     test("match_template correct theme", matched["theme"] == "clean_light")
 
-    # Сводка
     summary = t.get_summary()
     test("get_summary has templates count", summary["trained_templates_count"] > 0)
     test("get_summary has rules count", summary["custom_rules_count"] > 0)
 
-    # Очистка тестовых данных
     t.remove_template("test_keyword")
     t.remove_rule(len(t.get_rules()) - 1)
 
@@ -187,7 +168,6 @@ def test_pipeline():
     print("\n═══ 5. pipeline (end-to-end) ═══")
     pipe = Pipeline()
 
-    # Создание по промпту
     t0 = time.time()
     result = pipe.process_prompt("Create a 3 slide presentation about Space Exploration")
     elapsed = time.time() - t0
@@ -199,23 +179,18 @@ def test_pipeline():
     test("pipeline has slides", result.get("slides") is not None and len(result["slides"]) > 0)
     test(f"pipeline latency < 5s ({elapsed:.1f}s)", elapsed < 5)
 
-    # Русский промпт
     result_ru = pipe.process_prompt("Сделай презентацию про искусственный интеллект на 4 слайда")
     test("RU pipeline success", result_ru["success"])
     test("RU pipeline has slides", len(result_ru.get("slides", [])) > 0)
 
-    # Обученный шаблон
     result_tmpl = pipe.process_prompt("Create a pitch deck for my startup")
     test("Trained template matched", result_tmpl.get("source") == "trained_template")
 
-    # Неизвестная команда
     result_unk = pipe.process_prompt("xyz abc 123")
     test("Unknown command handled", result_unk is not None)
 
 
-# ═══════════════════════════════════════════════════════════════
-# Запуск
-# ═══════════════════════════════════════════════════════════════
+
 
 if __name__ == "__main__":
     print("🧪 Zest v2.0 — Test Suite")

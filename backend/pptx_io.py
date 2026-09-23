@@ -16,9 +16,8 @@ from pptx.enum.shapes import MSO_SHAPE
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ═══════════════════════════════════════════════════════════════
-# Темы оформления (RGB-палитры)
-# ═══════════════════════════════════════════════════════════════
+
+
 
 THEMES = {
     "modern_dark": {
@@ -59,9 +58,8 @@ THEMES = {
 class PptxIO:
     """Класс для чтения, записи и модификации PPTX-файлов."""
 
-    # ─────────────────────────────────────────────────────────
-    # Чтение (read)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def read_pptx(self, filepath):
         """
@@ -87,11 +85,9 @@ class PptxIO:
                 "notes": "",
             }
 
-            # Извлечение заметок
             if slide.has_notes_slide and slide.notes_slide.notes_text_frame:
                 slide_info["notes"] = slide.notes_slide.notes_text_frame.text.strip()
 
-            # Извлечение текста из фигур
             for s_idx, shape in enumerate(slide.shapes):
                 if not shape.has_text_frame:
                     continue
@@ -107,7 +103,6 @@ class PptxIO:
                 }
                 slide_info["shapes"].append(shape_info)
 
-                # Определение заголовка
                 is_title_shape = (shape == slide.shapes.title)
                 if is_title_shape or (not slide_info["title"] and len(full_text) < 120):
                     if not slide_info["title"]:
@@ -139,8 +134,7 @@ class PptxIO:
         shape = slide.shapes[shape_index]
         if not shape.has_text_frame:
             raise ValueError("Выбранная фигура не содержит текста")
-            
-        # Удаляем весь текст кроме первого run первого параграфа, чтобы сохранить стиль
+
         tf = shape.text_frame
         for p_idx, paragraph in enumerate(tf.paragraphs):
             for r_idx, run in enumerate(paragraph.runs):
@@ -148,8 +142,7 @@ class PptxIO:
                     run.text = new_text
                 else:
                     run.text = ""
-            
-            # Если нет runs, просто устанавливаем текст параграфа
+
             if not paragraph.runs and p_idx == 0:
                 paragraph.text = new_text
             elif not paragraph.runs:
@@ -160,9 +153,8 @@ class PptxIO:
         prs.save(out)
         return out
 
-    # ─────────────────────────────────────────────────────────
-    # Модификация (modify)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def modify_slide(self, filepath, slide_index, changes, output_filepath=None):
         """
@@ -191,7 +183,6 @@ class PptxIO:
         new_bullets = changes.get("new_bullets")
         replace_map = changes.get("replace_map", {})
 
-        # Замена строк
         for shape in slide.shapes:
             if not shape.has_text_frame:
                 continue
@@ -204,7 +195,6 @@ class PptxIO:
                                 if search_str in run.text:
                                     run.text = run.text.replace(search_str, rep_str)
 
-        # Замена заголовка
         if new_title:
             if slide.shapes.title and slide.shapes.title.has_text_frame:
                 for run in slide.shapes.title.text_frame.paragraphs[0].runs:
@@ -218,7 +208,6 @@ class PptxIO:
                         shape.text_frame.paragraphs[0].text = new_title
                         break
 
-        # Замена буллет-пунктов
         if new_bullets is not None:
             body_shape = None
             for shape in slide.shapes:
@@ -259,7 +248,6 @@ class PptxIO:
         new_slide = prs.slides.add_slide(blank_layout)
         self._set_background(new_slide, theme["bg_color"])
 
-        # Заголовок
         title_box = new_slide.shapes.add_textbox(Inches(1.0), Inches(0.8), Inches(11.0), Inches(1.0))
         tf = title_box.text_frame
         tf.word_wrap = True
@@ -270,7 +258,6 @@ class PptxIO:
         p.font.color.rgb = theme["title_color"]
         p.font.name = "Arial"
 
-        # Буллеты
         bullets = slide_data.get("bullets", [])
         if bullets:
             content_box = new_slide.shapes.add_textbox(Inches(1.0), Inches(2.0), Inches(11.0), Inches(4.5))
@@ -301,7 +288,6 @@ class PptxIO:
         if s_idx < 0 or s_idx >= len(prs.slides):
             raise IndexError(f"Слайд {slide_index} не существует (всего {len(prs.slides)})")
 
-        # python-pptx не имеет прямого delete, работаем через XML
         rId = prs.slides._sldIdLst[s_idx].rId
         prs.part.drop_rel(rId)
         del prs.slides._sldIdLst[s_idx]
@@ -311,9 +297,8 @@ class PptxIO:
         prs.save(out)
         return out
 
-    # ─────────────────────────────────────────────────────────
-    # Создание с нуля (create)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def create_presentation(self, title, subtitle="", slides_content=None,
                             template_filename="random", output_filepath="output.pptx"):
@@ -326,12 +311,11 @@ class PptxIO:
             slides_content = []
 
         templates_dir = os.path.join(BASE_DIR, "templates")
-        
-        # Если папка templates не существует, создаем её
+
         os.makedirs(templates_dir, exist_ok=True)
         
         if template_filename == "random" or template_filename is None:
-            # Ищем все файлы .pptx в папке
+
             available_templates = [f for f in os.listdir(templates_dir) if f.endswith(".pptx")]
             if available_templates:
                 template_filename = random.choice(available_templates)
@@ -339,15 +323,13 @@ class PptxIO:
                 template_filename = "base_template.pptx"
 
         template_path = os.path.join(templates_dir, template_filename)
-        
-        # Если шаблон не существует, создаем временный пустой
+
         if not os.path.exists(template_path):
             prs = Presentation()
             prs.save(template_path)
 
         prs = Presentation(template_path)
 
-        # ── Титульный слайд ──
         title_slide_layout = prs.slide_layouts[0]
         title_slide = prs.slides.add_slide(title_slide_layout)
         
@@ -360,17 +342,14 @@ class PptxIO:
                     shape.text = subtitle
                     break
 
-        # ── Контентные слайды ──
         content_slide_layout = prs.slide_layouts[1] if len(prs.slide_layouts) > 1 else prs.slide_layouts[0]
         
         for s_data in slides_content:
             new_slide = prs.slides.add_slide(content_slide_layout)
-            
-            # Заголовок
+
             if new_slide.shapes.title:
                 new_slide.shapes.title.text = s_data.get("title", "")
-                
-            # Буллеты
+
             body_shape = None
             for shape in new_slide.placeholders:
                 if shape.placeholder_format.idx == 1:
@@ -383,8 +362,7 @@ class PptxIO:
                 for bullet in s_data["bullets"][1:]:
                     p = tf.add_paragraph()
                     p.text = bullet
-                    
-            # Статистика (простой текстовый вывод, если есть)
+
             if s_data.get("stat_num") and body_shape:
                 p = body_shape.text_frame.add_paragraph()
                 p.text = f"\nСТАТИСТИКА: {s_data['stat_num']} - {s_data.get('stat_label', '')}"

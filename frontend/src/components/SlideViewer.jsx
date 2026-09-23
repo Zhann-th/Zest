@@ -32,7 +32,7 @@ export default function SlideViewer({ slides, onSlideUpdated }) {
 
   return (
     <div className="flex bg-white rounded-lg shadow h-[500px] overflow-hidden">
-      {/* Sidebar Thumbnails */}
+      {}
       <div className="w-1/4 border-r overflow-y-auto bg-gray-50 p-2">
         {slides.map((slide, idx) => (
           <div 
@@ -46,7 +46,7 @@ export default function SlideViewer({ slides, onSlideUpdated }) {
         ))}
       </div>
 
-      {/* Main Slide Area */}
+      {}
       <div className="w-3/4 p-6 flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Слайд {activeIndex + 1}</h2>

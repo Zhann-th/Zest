@@ -49,14 +49,14 @@ export default function ChatWindow({ onSlidesUpdate }) {
 
     try {
       if (currentFileId) {
-        // РЕЖИМ РЕДАКТИРОВАНИЯ
+        
         const res = await api.editPresentation(currentFileId, userMsg);
         setMessages(prev => [...prev, { 
           role: 'ai', 
           text: `${res.data.message} <br/><br/> <a href="http://127.0.0.1:5055${res.data.download_url}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition" target="_blank" download>Скачать измененный .pptx</a>` 
         }]);
       } else {
-        // РЕЖИМ ГЕНЕРАЦИИ (Шаг 1: Получаем структуру слайдов)
+        
         const res = await api.draftPresentation(userMsg);
         setMessages(prev => [...prev, { 
           role: 'ai', 
@@ -79,7 +79,7 @@ export default function ChatWindow({ onSlidesUpdate }) {
     setMessages(prev => [...prev, { role: 'user', text: `Выбран стиль: ${template}` }]);
 
     try {
-      // Шаг 2: Собираем презентацию
+      
       const res = await api.compilePresentation(topic, slides_content, template);
       
       setMessages(prev => [...prev, { 

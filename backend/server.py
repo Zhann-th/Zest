@@ -31,16 +31,13 @@ OUTPUT_FOLDER = os.path.join(BASE_DIR, "..", "outputs")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Инициализация модулей
 pipe = Pipeline()
 pptx_io = PptxIO()
 web = WebSearch()
 trainer = Trainer()
 
 
-# ═══════════════════════════════════════════════════════════════
-# API Endpoints
-# ═══════════════════════════════════════════════════════════════
+
 
 @app.route("/api/status", methods=["GET"])
 def get_status():
@@ -60,7 +57,7 @@ def get_templates():
     os.makedirs(templates_dir, exist_ok=True)
     templates = [f for f in os.listdir(templates_dir) if f.endswith(".pptx")]
     if not templates:
-        # Убедимся, что хотя бы base_template существует
+
         from pptx import Presentation
         prs = Presentation()
         prs.save(os.path.join(templates_dir, "base_template.pptx"))
@@ -112,14 +109,12 @@ def process_prompt():
     if not prompt:
         return jsonify({"error": "Промпт обязателен"}), 400
 
-    # Определяем путь к существующему файлу (если загружен)
     existing_filepath = None
     if file_id:
         fp = os.path.join(UPLOAD_FOLDER, file_id)
         if os.path.exists(fp):
             existing_filepath = fp
 
-    # Запускаем пайплайн
     result = pipe.process_prompt(prompt, existing_filepath=existing_filepath, template=template)
 
     status_code = 200 if result["success"] else 400
@@ -142,17 +137,14 @@ def draft_presentation():
         topic = topic or "General Overview"
     
     slide_count = nlu_result["entities"].get("slide_count", 4)
-    
-    # 1. Гуглим
+
     slides_content = pipe.web.format_facts(topic, max_slides=slide_count)
-    # Здесь можно было бы еще прогнать через LLMClient, если бы он был отделен. 
-    # В текущей реализации web.format_facts возвращает готовый контент (он не вызывает LLM, LLM вызывает pptx_io... стоп, LLM вызывает _generate_topic_slides)
-    
-    # Чтобы сделать всё правильно, вызовем pipe._generate_topic_slides если нужно, но пока используем format_facts как в поиске.
+
+
+
     if not slides_content:
         slides_content = pipe._generate_topic_slides(topic, slide_count)
 
-    # 2. Получаем шаблоны
     templates_dir = os.path.join(BASE_DIR, "templates")
     os.makedirs(templates_dir, exist_ok=True)
     templates = [f for f in os.listdir(templates_dir) if f.endswith(".pptx")]
@@ -208,13 +200,11 @@ def edit_presentation():
     filepath = os.path.join(UPLOAD_FOLDER, file_id)
     if not os.path.exists(filepath):
         return jsonify({"error": "Файл не найден на сервере"}), 404
-        
-    # Читаем текущую структуру
+
     structure = pptx_io.read_pptx(filepath)
-    
-    # Спрашиваем ИИ (эмуляция простого NLU для демо, или вызов LLM)
-    # В идеале здесь LLM получает структуру и возвращает JSON.
-    # Так как мы делаем быстрый MVP, попросим ИИ сгенерировать JSON.
+
+
+
     sys_prompt = (
         "Ты ИИ-редактор презентаций. Пользователь хочет изменить текст.\n"
         f"Текущая структура:\n{structure['slides']}\n"
@@ -222,8 +212,7 @@ def edit_presentation():
         "Напиши новый текст на основе запроса пользователя.\n"
         "Ответь СТРОГО валидным JSON: {\"slide_index\": int, \"shape_index\": int, \"new_text\": \"...\"}"
     )
-    
-    # Для MVP используем заглушку, если LLM сломается
+
     try:
         from llm_client import LLMClient
         llm = LLMClient()
@@ -326,9 +315,7 @@ def serve_index():
     return app.send_static_file("index.html")
 
 
-# ═══════════════════════════════════════════════════════════════
-# Запуск
-# ═══════════════════════════════════════════════════════════════
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5055))

@@ -13,9 +13,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data"
 TRAINING_FILE = os.path.join(DATA_DIR, "training_memory.json")
 
 
-# ═══════════════════════════════════════════════════════════════
-# Начальные данные (шаблоны по умолчанию)
-# ═══════════════════════════════════════════════════════════════
+
 
 DEFAULT_MEMORY = {
     "intent_templates": [
@@ -68,9 +66,8 @@ class Trainer:
         os.makedirs(DATA_DIR, exist_ok=True)
         self.memory = self._load()
 
-    # ─────────────────────────────────────────────────────────
-    # Загрузка / Сохранение
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _load(self):
         """Загружает JSON-память из файла."""
@@ -81,7 +78,6 @@ class Trainer:
             except Exception as e:
                 print(f"Ошибка загрузки training_memory.json: {e}")
 
-        # Сохраняем данные по умолчанию
         self.memory = DEFAULT_MEMORY
         self._save()
         return DEFAULT_MEMORY
@@ -101,9 +97,8 @@ class Trainer:
         self.memory = self._load()
         return self.memory
 
-    # ─────────────────────────────────────────────────────────
-    # Правила (rules)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def add_rule(self, rule_text):
         """
@@ -136,9 +131,8 @@ class Trainer:
             return removed
         return None
 
-    # ─────────────────────────────────────────────────────────
-    # Шаблоны (templates)
-    # ─────────────────────────────────────────────────────────
+
+
 
     def add_template(self, keyword, theme, structure):
         """
@@ -155,7 +149,6 @@ class Trainer:
         keyword = keyword.lower().strip()
         templates = self.memory.setdefault("intent_templates", [])
 
-        # Обновляем существующий
         for tmpl in templates:
             if tmpl["keyword"].lower() == keyword:
                 tmpl["theme"] = theme
@@ -164,7 +157,6 @@ class Trainer:
                 self._save()
                 return True
 
-        # Новый шаблон
         templates.append({
             "keyword": keyword,
             "slides_count": len(structure),
@@ -208,9 +200,8 @@ class Trainer:
                 return removed
         return None
 
-    # ─────────────────────────────────────────────────────────
-    # Сводка
-    # ─────────────────────────────────────────────────────────
+
+
 
     def get_summary(self):
         """Возвращает сводку обученного состояния."""

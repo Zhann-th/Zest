@@ -10,9 +10,7 @@ Rule-based NLU для понимания команд на русском и а�
 import re
 
 
-# ═══════════════════════════════════════════════════════════════
-# Интенты
-# ═══════════════════════════════════════════════════════════════
+
 
 INTENT_CREATE = "CREATE_DECK"
 INTENT_EDIT = "EDIT_SLIDE"
@@ -22,11 +20,8 @@ INTENT_SEARCH = "SEARCH_WEB"
 INTENT_UNKNOWN = "UNKNOWN"
 
 
-# ═══════════════════════════════════════════════════════════════
-# Паттерны (русские + английские)
-# ═══════════════════════════════════════════════════════════════
 
-# Создание презентации
+
 CREATE_PATTERNS_RU = [
     r"созда[йть].*презентаци",
     r"сделай.*презентаци",
@@ -46,7 +41,6 @@ CREATE_PATTERNS_EN = [
     r"new\s+(?:presentation|deck)",
 ]
 
-# Редактирование слайда
 EDIT_PATTERNS_RU = [
     r"замени.*(?:заголовок|текст|буллет|содержимое).*(?:слайд|стр)",
     r"измени.*(?:слайд|стр)",
@@ -61,7 +55,6 @@ EDIT_PATTERNS_EN = [
     r"set.*(?:title|text|heading).*(?:slide|page)",
 ]
 
-# Удаление слайда
 DELETE_PATTERNS_RU = [
     r"удали.*(?:слайд|стр)",
     r"убери.*(?:слайд|стр)",
@@ -72,7 +65,6 @@ DELETE_PATTERNS_EN = [
     r"(?:delete|remove|drop).*(?:slide|page)",
 ]
 
-# Добавление слайда
 ADD_PATTERNS_RU = [
     r"добав[ьи].*слайд",
     r"вставь.*слайд",
@@ -83,7 +75,6 @@ ADD_PATTERNS_EN = [
     r"(?:add|insert|append).*(?:slide|page)",
 ]
 
-# Веб-поиск
 SEARCH_PATTERNS_RU = [
     r"найди.*(?:информацию|факты|данные|статистику)",
     r"поиск.*(?:информаци|интернет|факт)",
@@ -97,7 +88,6 @@ SEARCH_PATTERNS_EN = [
     r"(?:from|on)\s+(?:the\s+)?(?:web|internet|online)",
 ]
 
-# Детекция темы оформления
 THEME_KEYWORDS = {
     "modern_dark": ["modern", "dark", "модерн", "тёмн", "темн"],
     "corporate_navy": ["corporate", "navy", "finance", "корпоратив", "делов", "бизнес"],
@@ -132,7 +122,6 @@ class NLUEngine:
         """
         text_lower = text.lower().strip()
 
-        # Извлекаем сущности
         entities = {
             "topic": self._extract_topic(text),
             "slide_count": self._extract_slide_count(text_lower),
@@ -143,7 +132,6 @@ class NLUEngine:
             "needs_web_search": self._needs_web_search(text_lower),
         }
 
-        # Определяем интент
         intent, confidence = self._classify_intent(text_lower, entities)
 
         return {
@@ -153,14 +141,12 @@ class NLUEngine:
             "raw_text": text.strip(),
         }
 
-    # ─────────────────────────────────────────────────────────
-    # Классификация интента
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _classify_intent(self, text_lower, entities):
         """Определяет интент по regex-паттернам. Возвращает (intent, confidence)."""
 
-        # Порядок важен: более специфичные сначала
         for patterns, intent in [
             (DELETE_PATTERNS_RU + DELETE_PATTERNS_EN, INTENT_DELETE),
             (EDIT_PATTERNS_RU + EDIT_PATTERNS_EN, INTENT_EDIT),
@@ -172,27 +158,23 @@ class NLUEngine:
                 if re.search(pattern, text_lower, re.IGNORECASE):
                     return intent, 0.85
 
-        # Если есть веб-поиск, но интент не определён
         if entities.get("needs_web_search"):
             return INTENT_SEARCH, 0.6
 
-        # Фоллбэк: если есть количество слайдов, скорее всего создание
         if entities.get("slide_count", 0) > 0:
             return INTENT_CREATE, 0.5
 
-        # Фоллбэк: если есть тема, создание
         if entities.get("topic"):
             return INTENT_CREATE, 0.4
 
         return INTENT_UNKNOWN, 0.1
 
-    # ─────────────────────────────────────────────────────────
-    # Извлечение сущностей
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _extract_topic(self, text):
         """Извлекает основную тему из промпта."""
-        # Убираем командные слова (рус + англ)
+
         topic = text.strip()
         remove_words_ru = [
             r"\bсозда[йть]\w*\b", r"\bсделай\b", r"\bгенер(?:ируй|ировать)\w*\b", r"\bпострой\b",
@@ -211,18 +193,16 @@ class NLUEngine:
         for word in remove_words_ru + remove_words_en:
             topic = re.sub(word, "", topic, flags=re.IGNORECASE)
 
-        # Убираем числа + "slide/слайд" конструкции (и обратный порядок)
         topic = re.sub(r"\d+\s*[-\s]?\s*(?:slide|slides|слайд\w*|page|pages|стр\w*)", "", topic, flags=re.IGNORECASE)
-        # Убираем "a N", "an", "the", standalone articles
+
         topic = re.sub(r"\ba\b|\ban\b|\bthe\b|\bfor\b|\bmy\b", "", topic, flags=re.IGNORECASE)
-        # Убираем оставшиеся одиночные числа
+
         topic = re.sub(r"\b\d+\b", "", topic)
-        # Убираем тему оформления из топика
+
         for theme_name, keywords in THEME_KEYWORDS.items():
             for kw in keywords:
                 topic = re.sub(rf"\b{kw}\w*\b", "", topic, flags=re.IGNORECASE)
 
-        # Чистим пробелы и знаки
         topic = re.sub(r"\s+", " ", topic).strip()
         topic = re.sub(r"^[\s,.\-—:]+|[\s,.\-—:]+$", "", topic)
 
@@ -230,7 +210,7 @@ class NLUEngine:
 
     def _extract_slide_count(self, text_lower):
         """Извлекает количество слайдов из текста."""
-        # "4 slide", "на 5 слайдов", "5-slide"
+
         match = re.search(r"(\d+)\s*[-\s]?\s*(?:slide|slides|слайд\w*|page|pages|стр\w*)", text_lower)
         if match:
             return int(match.group(1))
@@ -239,7 +219,7 @@ class NLUEngine:
 
     def _extract_slide_index(self, text_lower):
         """Извлекает номер слайда для редактирования/удаления."""
-        # "2-й слайд", "slide 3", "слайд номер 5", "3-го слайда"
+
         patterns = [
             r"(\d+)\s*[-—]?\s*(?:й|го|ый|ой|ий)?\s*слайд",
             r"слайд\w*\s*(?:номер|№|#)?\s*(\d+)",
@@ -255,7 +235,7 @@ class NLUEngine:
 
     def _extract_new_title(self, text_lower, original_text):
         """Извлекает новый заголовок из команды редактирования."""
-        # "замени заголовок 2-го слайда на «Новый заголовок»"
+
         patterns = [
             r"(?:заголовок|title)\s+.*?(?:на|to|=|:)\s*[\u00ab\u201c\"'\u2018](.*?)[\u00bb\u201d\"'\u2019]",
             r"(?:на|to|=|:)\s*[\u00ab\u201c\"'\u2018](.*?)[\u00bb\u201d\"'\u2019]",
@@ -283,7 +263,7 @@ class NLUEngine:
         """Определяет тему оформления из текста."""
         for theme_name, keywords in THEME_KEYWORDS.items():
             for kw in keywords:
-                # Partial match for Russian word stems
+
                 if re.search(rf"{re.escape(kw)}", text_lower):
                     return theme_name
         return "modern_dark"  # По умолчанию
@@ -295,7 +275,6 @@ class NLUEngine:
             if re.search(pattern, text_lower):
                 return True
 
-        # Дополнительные триггерные слова
         triggers = [
             "search", "internet", "web", "online", "google", "research",
             "find facts", "lookup", "интернет", "поиск", "загугл", "найди",

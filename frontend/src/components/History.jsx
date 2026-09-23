@@ -17,7 +17,7 @@ export default function History({ onRestore }) {
 
   useEffect(() => {
     loadHistory();
-    // Simple polling for history updates
+    
     const interval = setInterval(loadHistory, 5000);
     return () => clearInterval(interval);
   }, []);

@@ -14,7 +14,6 @@ class WebResearcher:
         """Searches Wikipedia & Web for reliable topic summaries, stats, and facts."""
         results = []
 
-        # 1. Wikipedia Topic Summary API for factual search
         try:
             wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(query)}"
             w_resp = requests.get(wiki_url, headers=self.headers, timeout=4)
@@ -29,14 +28,13 @@ class WebResearcher:
         except Exception as e:
             print("Wiki API error:", e)
 
-        # 2. DuckDuckGo Search
         try:
             from duckduckgo_search import DDGS
             with DDGS() as ddgs:
                 ddg_results = list(ddgs.text(query, max_results=max_results))
                 for item in ddg_results:
                     href = item.get("href", "")
-                    # Filter out non-article domains
+
                     if any(x in href for x in ["google.com/mail", "reddit.com/r/recipes"]):
                         continue
                     results.append({
@@ -47,7 +45,6 @@ class WebResearcher:
         except Exception as e:
             print("DDGS search error:", e)
 
-        # 3. Fallback DDG HTML scraper
         if len(results) < max_results:
             try:
                 url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"

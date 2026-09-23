@@ -60,8 +60,7 @@ class AIProcessor:
                     return json.load(f)
             except Exception as e:
                 print(f"Error loading training file: {e}")
-        
-        # Save default if file doesn't exist
+
         with open(TRAINING_FILE, 'w') as f:
             json.dump(DEFAULT_TRAINING_DATA, f, indent=2)
         return DEFAULT_TRAINING_DATA
@@ -80,7 +79,7 @@ class AIProcessor:
 
     def train_template(self, keyword, theme, slides_structure):
         """Trains the AI with a custom template mapping."""
-        # Update existing or append
+
         existing = False
         for item in self.training_data["intent_templates"]:
             if item["keyword"].lower() == keyword.lower():
@@ -107,18 +106,15 @@ class AIProcessor:
         Supports intent detection, web search integration, and template matching.
         """
         prompt_lower = prompt.lower()
-        
-        # Check if user requested web search
+
         needs_web_search = any(w in prompt_lower for w in ["search", "internet", "web", "online", "research", "find facts", "google"])
-        
-        # Check for trained templates
+
         matched_template = None
         for tmpl in self.training_data["intent_templates"]:
             if tmpl["keyword"] in prompt_lower:
                 matched_template = tmpl
                 break
 
-        # Theme detection
         theme = "modern_dark"
         if "corporate" in prompt_lower or "navy" in prompt_lower or "finance" in prompt_lower:
             theme = "corporate_navy"
@@ -129,13 +125,11 @@ class AIProcessor:
         elif matched_template:
             theme = matched_template.get("theme", "modern_dark")
 
-        # Slide Count Detection
         count_match = re.search(r'(\d+)\s*(?:slide|slides|page|pages)', prompt_lower)
         target_count = int(count_match.group(1)) if count_match else 4
 
-        # Decision 1: Web Research Deck Generation
         if needs_web_search and web_researcher:
-            # Extract topic
+
             topic = re.sub(r'create|generate|make|presentation|pptx|deck|slides?|search|web|online|research|about|on', '', prompt, flags=re.IGNORECASE).strip()
             topic = topic or prompt
             
@@ -149,7 +143,6 @@ class AIProcessor:
                 "source": "live_web_search"
             }
 
-        # Decision 2: Matched Trained Template
         if matched_template:
             return {
                 "action": "CREATE_DECK",
@@ -160,7 +153,6 @@ class AIProcessor:
                 "source": "trained_template"
             }
 
-        # Decision 3: Custom Generated Topic Deck
         topic = re.sub(r'create|generate|make|presentation|pptx|deck|slides?|about|on', '', prompt, flags=re.IGNORECASE).strip()
         topic = topic or "Strategic Overview"
 

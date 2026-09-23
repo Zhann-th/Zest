@@ -23,9 +23,8 @@ class WebSearch:
             "Accept-Language": "en-US,en;q=0.9,ru;q=0.8",
         }
 
-    # ─────────────────────────────────────────────────────────
-    # Основной поиск
-    # ─────────────────────────────────────────────────────────
+
+
 
     def search_topic(self, query, max_results=5):
         """
@@ -44,24 +43,20 @@ class WebSearch:
         """
         results = []
 
-        # 1. Wikipedia API — надёжные энциклопедические факты
         wiki_results = self._search_wikipedia(query)
         results.extend(wiki_results)
 
-        # 2. DuckDuckGo (через библиотеку ddgs)
         ddg_results = self._search_duckduckgo(query, max_results)
         results.extend(ddg_results)
 
-        # 3. Fallback: DDG HTML scraping
         if len(results) < max_results:
             fallback = self._search_ddg_html(query, max_results - len(results))
             results.extend(fallback)
 
         return results[:max_results]
 
-    # ─────────────────────────────────────────────────────────
-    # Парсинг конкретной страницы
-    # ─────────────────────────────────────────────────────────
+
+
 
     def scrape_page(self, url, max_sentences=10):
         """
@@ -84,13 +79,11 @@ class WebSearch:
 
             soup = BeautifulSoup(resp.text, "html.parser")
 
-            # Удаляем скрипты и стили
             for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
                 tag.decompose()
 
             title = soup.title.string.strip() if soup.title and soup.title.string else ""
 
-            # Извлекаем текстовые параграфы
             paragraphs = []
             for p in soup.find_all("p"):
                 text = p.get_text(strip=True)
@@ -99,7 +92,6 @@ class WebSearch:
 
             full_text = " ".join(paragraphs)
 
-            # Разбиваем на предложения
             sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", full_text) if len(s.strip()) > 20]
 
             return {
@@ -111,9 +103,8 @@ class WebSearch:
             print(f"Scrape error for {url}: {e}")
             return {"title": "", "text": "", "sentences": []}
 
-    # ─────────────────────────────────────────────────────────
-    # Форматирование фактов в слайды
-    # ─────────────────────────────────────────────────────────
+
+
 
     def format_facts(self, query, max_slides=4):
         """
@@ -142,7 +133,7 @@ class WebSearch:
 
         slides = []
         for res in raw_results[:max_slides]:
-            # Чистим заголовок
+
             title = res["title"]
             title = re.sub(r"\s*[-–—|]\s*Wikipedia.*$", "", title)
             title = re.sub(r"\s*[-–—|]\s*.*$", "", title)
@@ -160,7 +151,7 @@ class WebSearch:
             stat_label = ""
 
             for sent in sentences:
-                # Ищем статистику
+
                 stat_match = re.search(
                     r"(\d+(?:\.\d+)?%|\$\d+(?:\.\d+)?\s*(?:billion|million|trillion|B|M|T)?|\d+\s*(?:billion|million|trillion))",
                     sent, re.IGNORECASE,
@@ -188,9 +179,8 @@ class WebSearch:
 
         return slides
 
-    # ─────────────────────────────────────────────────────────
-    # Внутренние методы поиска
-    # ─────────────────────────────────────────────────────────
+
+
 
     def _search_wikipedia(self, query):
         """Поиск через Wikipedia REST API."""
@@ -210,7 +200,6 @@ class WebSearch:
         except Exception as e:
             print(f"Wikipedia API error: {e}")
 
-        # Также пробуем русскую Wikipedia
         try:
             wiki_url_ru = f"https://ru.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(query)}"
             resp = requests.get(wiki_url_ru, headers=self.headers, timeout=4)

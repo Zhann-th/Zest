@@ -6,7 +6,6 @@ from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 
-# Theme Definitions (RGB Color Palette)
 THEMES = {
     "modern_dark": {
         "bg_color": RGBColor(15, 23, 42),       # #0F172A slate 900
@@ -78,13 +77,11 @@ class PPTXEngine:
 
                 slide_info["all_text"].append(full_text)
 
-                # Try identifying title
                 if shape == slide.shapes.title or (not slide_info["title"] and len(full_text) < 100):
                     if not slide_info["title"]:
                         slide_info["title"] = full_text
                         continue
 
-                # Extract bullet points
                 for paragraph in text_frame.paragraphs:
                     p_text = paragraph.text.strip()
                     if p_text and p_text != slide_info["title"]:
@@ -115,18 +112,15 @@ class PPTXEngine:
 
         theme = THEMES.get(theme_name, THEMES["modern_dark"])
 
-        # 1. Title Slide
         blank_layout = prs.slide_layouts[6]
         title_slide = prs.slides.add_slide(blank_layout)
         self._set_background(title_slide, prs, theme["bg_color"])
 
-        # Decorative Top Accent Bar
         accent_bar = title_slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.15))
         accent_bar.fill.solid()
         accent_bar.fill.fore_color.rgb = theme["title_color"]
         accent_bar.line.fill.background()
 
-        # Title Box
         title_box = title_slide.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(11.333), Inches(2.0))
         tf = title_box.text_frame
         tf.word_wrap = True
@@ -146,7 +140,6 @@ class PPTXEngine:
             p2.font.name = "Arial"
             p2.space_before = Pt(14)
 
-        # Footer badge
         footer_box = title_slide.shapes.add_textbox(Inches(1.0), Inches(6.5), Inches(11.333), Inches(0.5))
         ftf = footer_box.text_frame
         fp = ftf.paragraphs[0]
@@ -154,7 +147,6 @@ class PPTXEngine:
         fp.font.size = Pt(12)
         fp.font.color.rgb = theme["subtext_color"]
 
-        # 2. Add Content Slides
         for s_data in slides_content:
             s_title = s_data.get("title", "Untitled Slide")
             bullets = s_data.get("bullets", [])
@@ -165,13 +157,11 @@ class PPTXEngine:
             slide = prs.slides.add_slide(blank_layout)
             self._set_background(slide, prs, theme["bg_color"])
 
-            # Header Accent line
             hdr_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(0.8), Inches(0.12), Inches(0.7))
             hdr_bar.fill.solid()
             hdr_bar.fill.fore_color.rgb = theme["title_color"]
             hdr_bar.line.fill.background()
 
-            # Slide Header Text
             hdr_box = slide.shapes.add_textbox(Inches(1.1), Inches(0.7), Inches(11.0), Inches(1.0))
             htf = hdr_box.text_frame
             htf.word_wrap = True
@@ -183,7 +173,7 @@ class PPTXEngine:
             hp.font.name = "Arial"
 
             if layout_type == "stat_callout" and stat_num:
-                # Big Stat Card
+
                 card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.1), Inches(2.0), Inches(5.0), Inches(4.5))
                 card.fill.solid()
                 card.fill.fore_color.rgb = theme["card_bg"]
@@ -205,7 +195,6 @@ class PPTXEngine:
                 cp2.alignment = PP_ALIGN.CENTER
                 cp2.space_before = Pt(12)
 
-                # Right column text
                 r_box = slide.shapes.add_textbox(Inches(6.5), Inches(2.0), Inches(6.0), Inches(4.5))
                 rtf = r_box.text_frame
                 rtf.word_wrap = True
@@ -221,7 +210,6 @@ class PPTXEngine:
                 col1_bullets = bullets[:half]
                 col2_bullets = bullets[half:]
 
-                # Col 1
                 c1_box = slide.shapes.add_textbox(Inches(1.1), Inches(2.0), Inches(5.3), Inches(4.5))
                 c1_tf = c1_box.text_frame
                 c1_tf.word_wrap = True
@@ -232,7 +220,6 @@ class PPTXEngine:
                     p.font.color.rgb = theme["text_color"]
                     p.space_before = Pt(12)
 
-                # Col 2
                 c2_box = slide.shapes.add_textbox(Inches(6.8), Inches(2.0), Inches(5.3), Inches(4.5))
                 c2_tf = c2_box.text_frame
                 c2_tf.word_wrap = True
@@ -244,7 +231,7 @@ class PPTXEngine:
                     p.space_before = Pt(12)
 
             else:
-                # Standard Bullet Cards layout
+
                 content_box = slide.shapes.add_textbox(Inches(1.1), Inches(2.0), Inches(11.0), Inches(4.8))
                 ctf = content_box.text_frame
                 ctf.word_wrap = True
@@ -275,7 +262,6 @@ class PPTXEngine:
             new_bullets = mod.get("new_bullets")
             replace_text_map = mod.get("replace_map", {})
 
-            # Replace explicit text string mappings
             for shape in slide.shapes:
                 if not shape.has_text_frame:
                     continue
@@ -287,20 +273,18 @@ class PPTXEngine:
                             if search_str in p.text:
                                 p.text = p.text.replace(search_str, rep_str)
 
-            # Update Title if requested
             if new_title:
                 if slide.shapes.title and slide.shapes.title.has_text_frame:
                     slide.shapes.title.text_frame.text = new_title
                 else:
-                    # Look for first shape
+
                     for shape in slide.shapes:
                         if shape.has_text_frame:
                             shape.text_frame.paragraphs[0].text = new_title
                             break
 
-            # Update bullets if requested
             if new_bullets is not None:
-                # Find body shape
+
                 body_shape = None
                 for shape in slide.shapes:
                     if shape.has_text_frame and shape != slide.shapes.title:
@@ -315,7 +299,6 @@ class PPTXEngine:
                         p.text = b
                         p.level = 0
 
-        # Append new slides if requested in modifications
         append_slides = [m for m in modifications if m.get("action") == "add_slide"]
         if append_slides:
             blank_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[0]
