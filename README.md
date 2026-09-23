@@ -1,30 +1,18 @@
-# Zest: AI Presentation Generator
+# Zest
 
-**Zest** is an intelligent, full-stack application that generates complete, highly visual PPTX presentations instantly from a single text prompt using AI.
+Zest is a tool I built to solve the problem of making presentations from scratch. Instead of spending hours on formatting and researching, you just give it a prompt, and it generates a complete, designed PPTX file.
 
-## Features
-- **Instant Generation:** Type a topic, and Zest automatically researches, structures, and designs a complete presentation.
-- **Full-Stack Architecture:** Built with a modern React frontend (Vite) and a robust backend.
-- **Sleek UI:** Smooth, animated, and modern dark-mode aesthetic for a premium user experience.
+It's a full-stack project. The frontend handles the user interface and animations, while the backend talks to AI models to structure the content and build the actual presentation file.
 
 ## Tech Stack
-- **Frontend:** React, Vite, Tailwind CSS
-- **Backend:** Python (FastAPI/Flask) / Node.js
-- **AI Integration:** OpenAI / Gemini APIs
+- Frontend: React built with Vite and Tailwind CSS.
+- Backend: Python/Node.js handling the API and file generation.
+- AI: Integration with OpenAI/Gemini to generate the presentation content.
 
-## Getting Started
+## Setup
+To run the frontend:
+1. cd into frontend
+2. Run npm install
+3. Run npm run dev
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Backend
-Make sure you have your API keys configured in the environment variables.
-```bash
-cd backend
-pip install -r requirements.txt
-python app.py
-```
+To run the backend, make sure your API keys are set in your environment, install the requirements, and start the server script.
