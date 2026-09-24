@@ -1,10 +1,8 @@
 import json
 import os
 import re
-
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 TRAINING_FILE = os.path.join(DATA_DIR, "training_memory.json")
-
 DEFAULT_TRAINING_DATA = {
     "intent_templates": [
         {
@@ -47,12 +45,10 @@ DEFAULT_TRAINING_DATA = {
         "Titles should be action-oriented and under 8 words."
     ]
 }
-
 class AIProcessor:
     def __init__(self):
         os.makedirs(DATA_DIR, exist_ok=True)
         self.training_data = self._load_training_memory()
-
     def _load_training_memory(self):
         if os.path.exists(TRAINING_FILE):
             try:
@@ -60,15 +56,12 @@ class AIProcessor:
                     return json.load(f)
             except Exception as e:
                 print(f"Error loading training file: {e}")
-
         with open(TRAINING_FILE, 'w') as f:
             json.dump(DEFAULT_TRAINING_DATA, f, indent=2)
         return DEFAULT_TRAINING_DATA
-
     def _save_training_memory(self):
         with open(TRAINING_FILE, 'w') as f:
             json.dump(self.training_data, f, indent=2)
-
     def train_custom_rule(self, rule_text):
         """Adds a custom presentation rule to the AI memory."""
         if rule_text not in self.training_data["custom_rules"]:
@@ -76,10 +69,8 @@ class AIProcessor:
             self._save_training_memory()
             return True
         return False
-
     def train_template(self, keyword, theme, slides_structure):
         """Trains the AI with a custom template mapping."""
-
         existing = False
         for item in self.training_data["intent_templates"]:
             if item["keyword"].lower() == keyword.lower():
@@ -88,7 +79,6 @@ class AIProcessor:
                 item["slides_count"] = len(slides_structure)
                 existing = True
                 break
-        
         if not existing:
             self.training_data["intent_templates"].append({
                 "keyword": keyword.lower(),
@@ -96,25 +86,20 @@ class AIProcessor:
                 "theme": theme,
                 "structure": slides_structure
             })
-        
         self._save_training_memory()
         return True
-
     def parse_user_prompt(self, prompt, web_researcher=None):
         """
         Parses natural language prompt and generates structured presentation commands.
         Supports intent detection, web search integration, and template matching.
         """
         prompt_lower = prompt.lower()
-
         needs_web_search = any(w in prompt_lower for w in ["search", "internet", "web", "online", "research", "find facts", "google"])
-
         matched_template = None
         for tmpl in self.training_data["intent_templates"]:
             if tmpl["keyword"] in prompt_lower:
                 matched_template = tmpl
                 break
-
         theme = "modern_dark"
         if "corporate" in prompt_lower or "navy" in prompt_lower or "finance" in prompt_lower:
             theme = "corporate_navy"
@@ -124,15 +109,11 @@ class AIProcessor:
             theme = "clean_light"
         elif matched_template:
             theme = matched_template.get("theme", "modern_dark")
-
         count_match = re.search(r'(\d+)\s*(?:slide|slides|page|pages)', prompt_lower)
         target_count = int(count_match.group(1)) if count_match else 4
-
         if needs_web_search and web_researcher:
-
             topic = re.sub(r'create|generate|make|presentation|pptx|deck|slides?|search|web|online|research|about|on', '', prompt, flags=re.IGNORECASE).strip()
             topic = topic or prompt
-            
             web_slides = web_researcher.extract_slide_content_from_web(topic, max_slides=target_count)
             return {
                 "action": "CREATE_DECK",
@@ -142,7 +123,6 @@ class AIProcessor:
                 "slides": web_slides,
                 "source": "live_web_search"
             }
-
         if matched_template:
             return {
                 "action": "CREATE_DECK",
@@ -152,10 +132,8 @@ class AIProcessor:
                 "slides": matched_template["structure"],
                 "source": "trained_template"
             }
-
         topic = re.sub(r'create|generate|make|presentation|pptx|deck|slides?|about|on', '', prompt, flags=re.IGNORECASE).strip()
         topic = topic or "Strategic Overview"
-
         generated_slides = [
             {
                 "title": f"Introduction to {topic.title()}",
@@ -192,7 +170,6 @@ class AIProcessor:
                 ]
             }
         ]
-
         return {
             "action": "CREATE_DECK",
             "title": topic.title(),
@@ -201,7 +178,6 @@ class AIProcessor:
             "slides": generated_slides[:target_count],
             "source": "custom_ai_generation"
         }
-
     def get_training_summary(self):
         """Returns the current training state of the AI engine."""
         return {

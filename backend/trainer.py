@@ -1,20 +1,12 @@
 """
 trainer.py — Модуль обучаемой памяти.
-
 JSON-хранилище пользовательских шаблонов, правил и правок.
 Позволяет «обучать» систему под конкретного пользователя.
 """
-
 import json
 import os
-
-
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 TRAINING_FILE = os.path.join(DATA_DIR, "training_memory.json")
-
-
-
-
 DEFAULT_MEMORY = {
     "intent_templates": [
         {
@@ -57,18 +49,11 @@ DEFAULT_MEMORY = {
         "Titles should be action-oriented and under 8 words.",
     ],
 }
-
-
 class Trainer:
     """Обучаемая память: шаблоны, правила, персистентность."""
-
     def __init__(self):
         os.makedirs(DATA_DIR, exist_ok=True)
         self.memory = self._load()
-
-
-
-
     def _load(self):
         """Загружает JSON-память из файла."""
         if os.path.exists(TRAINING_FILE):
@@ -77,51 +62,39 @@ class Trainer:
                     return json.load(f)
             except Exception as e:
                 print(f"Ошибка загрузки training_memory.json: {e}")
-
         self.memory = DEFAULT_MEMORY
         self._save()
         return DEFAULT_MEMORY
-
     def _save(self):
         """Сохраняет текущую память в JSON-файл."""
         os.makedirs(DATA_DIR, exist_ok=True)
         with open(TRAINING_FILE, "w", encoding="utf-8") as f:
             json.dump(self.memory, f, indent=2, ensure_ascii=False)
-
     def save(self):
         """Публичный метод сохранения."""
         self._save()
-
     def load(self):
         """Публичный метод перезагрузки из файла."""
         self.memory = self._load()
         return self.memory
-
-
-
-
     def add_rule(self, rule_text):
         """
         Добавляет пользовательское правило в память.
-
         Returns:
             bool — True если добавлено, False если уже существует
         """
         rule_text = rule_text.strip()
         if not rule_text:
             return False
-
         rules = self.memory.setdefault("custom_rules", [])
         if rule_text not in rules:
             rules.append(rule_text)
             self._save()
             return True
         return False
-
     def get_rules(self):
         """Возвращает список всех правил."""
         return self.memory.get("custom_rules", [])
-
     def remove_rule(self, rule_index):
         """Удаляет правило по индексу (0-based)."""
         rules = self.memory.get("custom_rules", [])
@@ -130,25 +103,18 @@ class Trainer:
             self._save()
             return removed
         return None
-
-
-
-
     def add_template(self, keyword, theme, structure):
         """
         Обучает AI новому шаблону. Обновляет существующий по ключевому слову.
-
         Args:
             keyword: ключевое слово-триггер
             theme: тема оформления
             structure: list[dict] — структура слайдов
-
         Returns:
             bool — True
         """
         keyword = keyword.lower().strip()
         templates = self.memory.setdefault("intent_templates", [])
-
         for tmpl in templates:
             if tmpl["keyword"].lower() == keyword:
                 tmpl["theme"] = theme
@@ -156,7 +122,6 @@ class Trainer:
                 tmpl["slides_count"] = len(structure)
                 self._save()
                 return True
-
         templates.append({
             "keyword": keyword,
             "slides_count": len(structure),
@@ -165,30 +130,23 @@ class Trainer:
         })
         self._save()
         return True
-
     def match_template(self, prompt):
         """
         Ищет совпадающий шаблон по ключевому слову в промпте.
-
         Args:
             prompt: строка запроса
-
         Returns:
             dict | None — найденный шаблон или None
         """
         prompt_lower = prompt.lower()
         templates = self.memory.get("intent_templates", [])
-
         for tmpl in templates:
             if tmpl["keyword"] in prompt_lower:
                 return tmpl
-
         return None
-
     def get_templates(self):
         """Возвращает список всех шаблонов."""
         return self.memory.get("intent_templates", [])
-
     def remove_template(self, keyword):
         """Удаляет шаблон по ключевому слову."""
         keyword = keyword.lower().strip()
@@ -199,15 +157,10 @@ class Trainer:
                 self._save()
                 return removed
         return None
-
-
-
-
     def get_summary(self):
         """Возвращает сводку обученного состояния."""
         templates = self.memory.get("intent_templates", [])
         rules = self.memory.get("custom_rules", [])
-
         return {
             "trained_templates_count": len(templates),
             "templates": [t["keyword"] for t in templates],

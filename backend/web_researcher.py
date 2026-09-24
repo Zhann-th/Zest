@@ -2,18 +2,15 @@ import urllib.parse
 import requests
 from bs4 import BeautifulSoup
 import re
-
 class WebResearcher:
     def __init__(self):
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9"
         }
-
     def search_web(self, query, max_results=5):
         """Searches Wikipedia & Web for reliable topic summaries, stats, and facts."""
         results = []
-
         try:
             wiki_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(query)}"
             w_resp = requests.get(wiki_url, headers=self.headers, timeout=4)
@@ -27,14 +24,12 @@ class WebResearcher:
                     })
         except Exception as e:
             print("Wiki API error:", e)
-
         try:
             from duckduckgo_search import DDGS
             with DDGS() as ddgs:
                 ddg_results = list(ddgs.text(query, max_results=max_results))
                 for item in ddg_results:
                     href = item.get("href", "")
-
                     if any(x in href for x in ["google.com/mail", "reddit.com/r/recipes"]):
                         continue
                     results.append({
@@ -44,7 +39,6 @@ class WebResearcher:
                     })
         except Exception as e:
             print("DDGS search error:", e)
-
         if len(results) < max_results:
             try:
                 url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
@@ -66,13 +60,10 @@ class WebResearcher:
                             break
             except Exception as ex:
                 print(f"Fallback search error: {ex}")
-
         return results[:max_results]
-
     def extract_slide_content_from_web(self, query, max_slides=3):
         """Searches the web and formats extracted information directly into PowerPoint slide structures."""
         raw_results = self.search_web(query, max_results=max_slides * 2)
-
         if not raw_results:
             return [{
                 "title": f"Overview of {query.title()}",
@@ -83,7 +74,6 @@ class WebResearcher:
                 ],
                 "source": "Web Research Engine"
             }]
-
         slides = []
         for idx, res in enumerate(raw_results[:max_slides]):
             title = res['title']
@@ -92,14 +82,11 @@ class WebResearcher:
             title = re.sub(r' \| .*$', '', title)
             if len(title) > 55:
                 title = title[:52] + "..."
-
             snippet = res['snippet']
             sentences = [s.strip() for s in re.split(r'\. |\n', snippet) if len(s.strip()) > 15]
-
             bullets = []
             stat_num = ""
             stat_label = ""
-
             for sent in sentences:
                 stat_match = re.search(r'(\d+%(?:\.\d+)?|\$\d+(?:\.\d+)?\s*(?:billion|million|B|M)?|\d+\s*(?:billion|million))', sent, re.IGNORECASE)
                 if stat_match and not stat_num:
@@ -108,12 +95,9 @@ class WebResearcher:
                 else:
                     if len(sent) < 130:
                         bullets.append(sent)
-
             if len(bullets) < 2:
                 bullets.append(f"Context: {snippet[:110]}...")
-
             slide_type = "stat_callout" if stat_num else "bullets"
-
             slides.append({
                 "title": title or f"Research: {query}",
                 "bullets": bullets[:4],
@@ -122,5 +106,4 @@ class WebResearcher:
                 "stat_label": stat_label,
                 "source": res['url']
             })
-
         return slides
